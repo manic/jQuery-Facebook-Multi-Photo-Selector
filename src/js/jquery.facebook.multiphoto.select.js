@@ -101,8 +101,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 
 				settings.imageSubmitButton.bind('click', _submitSelectedImages);
 				imageClearButton.bind('click', _clearSelectedImages);
-                nextPage.data('type', 'album').data('url', response.paging.next);
-                prevPage.data('type', 'album').data('url', response.paging.previous);
 
 				for (i = 0; i < albums.length; i++) {
 					var newRow = (i + 1) % settings.numAlbumColumns === 1 || settings.numAlbumColumns === 1 ? true : false;
@@ -431,13 +429,13 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
         var _checkPage = function(albumId, nowPage) {
             var response = albumImageCache[albumId][nowPage];
             if (response.paging && response.paging.next) {
-                nextPage.data('page', nowPage + 1).data('url', response.paging.next).show();
+                nextPage.data('page', nowPage + 1).show();
             } else {
                 nextPage.hide();
             }
 
             if (response.paging && response.paging.previous) {
-                prevPage.data('page', nowPage - 1).data('url', response.paging.previous).show();
+                prevPage.data('page', nowPage - 1).show();
             } else {
                 prevPage.hide();
             }
