@@ -403,17 +403,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			_updateActionButtons();
 		};
 
-        var _gup = function(name, href) {
-            name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-            var regexS = "[\\?&]"+name+"=([^&#]*)";
-            var regex = new RegExp( regexS );
-            var results = regex.exec( href );
-            if( results == null )
-                return "";
-            else
-                return results[1];
-        };
-
         var _getPage = function() {
             if ($(this).data('mtype') == 'album') {
                 console.log($(this).data('url'));
