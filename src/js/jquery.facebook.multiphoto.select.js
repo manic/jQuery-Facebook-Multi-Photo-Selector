@@ -47,7 +47,7 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
             albumPrevPage = $('#jfmps-album-prev-page', container),
 			breadCrumbTpl = '{album_name} [X]',
 			settings = {
-                photosLimit : 25,
+                photosLimit : 24,
 				maxPhotosSelected : 10,
 				numAlbumColumns : 4,
 				numPhotosColumns: 6,
@@ -152,7 +152,7 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
             albumPrevPage.hide();
             albumNextPage.hide();
 			if (albumImageCache[albumId] === undefined) {
-				FB.api('/' + albumId + '/photos', function(response){
+				FB.api('/' + albumId + '/photos?limit=' + settings.photosLimit, function(response){
 					if (settings.debug) {log('FB API Response /' + albumId + '/photos:', response);}
 
                     albumImageCache[albumId] = {};
@@ -421,7 +421,8 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
             } else {
                 var nowPage = $(this).data('page'),
                     albumId = $(this).data('albumId'),
-                    url = '/' + albumId + '/photos?offset=' + (25 * (nowPage - 1));
+                    url = '/' + albumId + '/photos?limit=' + settings.photosLimit + '&offset=' + (settings.photosLimit * (nowPage - 1));
+                    console.log(url);
 
                 if (albumImageCache[albumId][nowPage] === undefined) {
                     FB.api(url, function(response){
