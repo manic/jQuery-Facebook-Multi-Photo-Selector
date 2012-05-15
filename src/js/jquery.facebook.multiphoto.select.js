@@ -23,6 +23,10 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 				'</div>' +
 				'<a class="jfmps-meta" id="jfmps-num-selected" href="javascript:void(0);">已選擇(<span id="jfmps-selected-count">0</span>)</a>' +
 				'<a class="jfmps-meta" id="jfmps-clear-button" href="javascript:void(0);">清除已選相片</a>' +
+				'<a class="jfmps-meta" id="jfmps-photo-next-page" data-mtype="photo" href="javascript:void(0);">下一頁</a>' +
+				'<a class="jfmps-meta" id="jfmps-photo-prev-page" data-mtype="photo" href="javascript:void(0);">上一頁</a>' +
+				'<a class="jfmps-meta" id="jfmps-album-next-page" data-mtype="album" href="javascript:void(0);">下一頁</a>' +
+				'<a class="jfmps-meta" id="jfmps-album-prev-page" data-mtype="album" href="javascript:void(0);">上一頁</a>' +
 			'</div>' +
 			'<div id="jfmps-album-covers"></div>' +
 			'<div id="jfmps-album-photos"></div>' +
@@ -37,15 +41,20 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			breadcrumbEl = $('#jfmps-photos-list-crumb', container),
 			breadcrumbSeparator = $('#jfmps-crumb-separator', container),
 			imageClearButton = $('#jfmps-clear-button', container),
+			nextPage = $('#jfmps-photo-next-page', container),
+			prevPage = $('#jfmps-photo-prev-page', container),
+            albumNextPage = $('#jfmps-album-next-page', container),
+            albumPrevPage = $('#jfmps-album-prev-page', container),
 			breadCrumbTpl = '{album_name} [X]',
 			settings = {
+                photosLimit : 25,
 				maxPhotosSelected : 10,
 				numAlbumColumns : 4,
 				numPhotosColumns: 6,
 				imageSubmitButton : $('#jfmps-submit-button'),
 				submitCallback : function(jsonData){ alert(jsonData); },
-				noAlbumImagesText : "You have no images in this album.",
-				noAlbumsText : "You do not have any albums.",
+				noAlbumImagesText : "沒有相片",
+				noAlbumsText : "沒有相簿",
 				selectedImageCallback: null,
 				debug: false
 			},
@@ -66,6 +75,10 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			_updateSelectedCountDisplay();
 
 			FB.api('/me/albums', _showAlbumContent);
+            albumNextPage.bind('click', _getPage);
+            albumPrevPage.bind('click', _getPage);
+            nextPage.bind('click', _getPage).hide();
+            prevPage.bind('click', _getPage).hide();
 		};
 
 		/**
@@ -88,6 +101,8 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 
 				settings.imageSubmitButton.bind('click', _submitSelectedImages);
 				imageClearButton.bind('click', _clearSelectedImages);
+                nextPage.data('type', 'album').data('url', response.paging.next);
+                prevPage.data('type', 'album').data('url', response.paging.previous);
 
 				for (i = 0; i < albums.length; i++) {
 					var newRow = (i + 1) % settings.numAlbumColumns === 1 || settings.numAlbumColumns === 1 ? true : false;
@@ -131,18 +146,23 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 		 * @param albumName String of the Album Name
 		**/
 		var _handleAlbumClickListeners = function(e, albumEl, albumName){
-			var albumId = albumEl.data('album_id');
+			var albumId = albumEl.data('album_id'), nowPage = 1;
 			breadcrumbEl.empty().html(breadCrumbTpl.replace('{album_name}', albumName));
 
+            albumPrevPage.hide();
+            albumNextPage.hide();
 			if (albumImageCache[albumId] === undefined) {
 				FB.api('/' + albumId + '/photos', function(response){
 					if (settings.debug) {log('FB API Response /' + albumId + '/photos:', response);}
 
-					albumImageCache[albumId] = response.data;
-					_showAlbumImages(albumId);
+                    albumImageCache[albumId] = {};
+					albumImageCache[albumId][nowPage] = response;
+                    _checkPage(albumId, nowPage);
+					_showAlbumImages(albumId, nowPage);
 				});
 			}else{
-				_showAlbumImages(albumId);
+                _checkPage(albumId, nowPage);
+				_showAlbumImages(albumId, nowPage);
 			}
 		};
 
@@ -151,9 +171,10 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 		 * Constructs DOM elements from cached Facebook Graph API Image Object. Adds Click Event Listener to breadcrumb bar.
 		 * @param int Facebook Graph Object ID of Album.
 		**/
-		var _showAlbumImages = function(albumId){
-			var albumImagesData = albumImageCache[albumId],
+		var _showAlbumImages = function(albumId, nowPage){
+			var albumImagesData = albumImageCache[albumId][nowPage].data,
 				i;
+			albumPhotosContainer.empty();
             if (albumImagesData.length > 0) {
     			for (i = 0; i < albumImagesData.length; i++) {
 					var newRow = (i + 1) % settings.numPhotosColumns === 1 ? true : false;
@@ -247,7 +268,7 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 		 * @param listItem the <li> element that is to be made capable of unselecting
 		 **/
 		var _makeUnselectable = function(listItem){
-			var unselectEl = $('<span class="jfmps-selected-unselect"/>').html('[x] remove');
+			var unselectEl = $('<span class="jfmps-selected-unselect"/>').html('[x] 移除');
 
 			unselectEl.hide();
 
@@ -302,6 +323,11 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			breadcrumbEl.unbind('click').hide();
 			breadcrumbSeparator.hide();
 			albumContainer.show();
+            albumPrevPage.show();
+            albumNextPage.show();
+            prevPage.hide();
+            nextPage.hide();
+
 		};
 
 		/**
@@ -376,6 +402,58 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 
 			_updateActionButtons();
 		};
+
+        var _gup = function(name, href) {
+            name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+            var regexS = "[\\?&]"+name+"=([^&#]*)";
+            var regex = new RegExp( regexS );
+            var results = regex.exec( href );
+            if( results == null )
+                return "";
+            else
+                return results[1];
+        };
+
+        var _getPage = function() {
+            if ($(this).data('mtype') == 'album') {
+                console.log($(this).data('url'));
+                FB.api($(this).data('url'), _showAlbumContent);
+            } else {
+                var nowPage = $(this).data('page'),
+                    albumId = $(this).data('albumId'),
+                    url = '/' + albumId + '/photos?offset=' + (25 * (nowPage - 1));
+
+                if (albumImageCache[albumId][nowPage] === undefined) {
+                    FB.api(url, function(response){
+                        if (settings.debug) {log('FB API Response /' + albumId + '/photos/' + nowPage + ':', response);}
+
+                        albumImageCache[albumId][nowPage] = response;
+                        _checkPage(albumId, nowPage);
+                        _showAlbumImages(albumId, nowPage);
+                    });
+                }else{
+                    _checkPage(albumId, nowPage);
+                    _showAlbumImages(albumId, nowPage);
+                }
+            }
+        };
+
+        var _checkPage = function(albumId, nowPage) {
+            var response = albumImageCache[albumId][nowPage];
+            if (response.paging && response.paging.next) {
+                nextPage.data('page', nowPage + 1).data('url', response.paging.next).show();
+            } else {
+                nextPage.hide();
+            }
+
+            if (response.paging && response.paging.previous) {
+                prevPage.data('page', nowPage - 1).data('url', response.paging.previous).show();
+            } else {
+                prevPage.hide();
+            }
+            nextPage.data('albumId', albumId);
+            prevPage.data('albumId', albumId);
+        };
 
 		/**
 		 * Begin app
