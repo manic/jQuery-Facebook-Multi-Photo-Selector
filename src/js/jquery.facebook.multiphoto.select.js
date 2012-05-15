@@ -25,8 +25,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 				'<a class="jfmps-meta" id="jfmps-clear-button" href="javascript:void(0);">清除已選相片</a>' +
 				'<a class="jfmps-meta" id="jfmps-photo-next-page" data-mtype="photo" href="javascript:void(0);">下一頁</a>' +
 				'<a class="jfmps-meta" id="jfmps-photo-prev-page" data-mtype="photo" href="javascript:void(0);">上一頁</a>' +
-				'<a class="jfmps-meta" id="jfmps-album-next-page" data-mtype="album" href="javascript:void(0);">下一頁</a>' +
-				'<a class="jfmps-meta" id="jfmps-album-prev-page" data-mtype="album" href="javascript:void(0);">上一頁</a>' +
 			'</div>' +
 			'<div id="jfmps-album-covers"></div>' +
 			'<div id="jfmps-album-photos"></div>' +
@@ -43,8 +41,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			imageClearButton = $('#jfmps-clear-button', container),
 			nextPage = $('#jfmps-photo-next-page', container),
 			prevPage = $('#jfmps-photo-prev-page', container),
-            albumNextPage = $('#jfmps-album-next-page', container),
-            albumPrevPage = $('#jfmps-album-prev-page', container),
 			breadCrumbTpl = '{album_name} [X]',
 			settings = {
                 photosLimit : 24,
@@ -74,9 +70,7 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 
 			_updateSelectedCountDisplay();
 
-			FB.api('/me/albums', _showAlbumContent);
-            albumNextPage.bind('click', _getPage);
-            albumPrevPage.bind('click', _getPage);
+			FB.api('/me/albums?limit=96', _showAlbumContent);
             nextPage.bind('click', _getPage).hide();
             prevPage.bind('click', _getPage).hide();
 		};
@@ -147,8 +141,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			var albumId = albumEl.data('album_id'), nowPage = 1;
 			breadcrumbEl.empty().html(breadCrumbTpl.replace('{album_name}', albumName));
 
-            albumPrevPage.hide();
-            albumNextPage.hide();
 			if (albumImageCache[albumId] === undefined) {
 				FB.api('/' + albumId + '/photos?limit=' + settings.photosLimit, function(response){
 					if (settings.debug) {log('FB API Response /' + albumId + '/photos:', response);}
@@ -321,8 +313,6 @@ window.log=function(){log.history=log.history||[];log.history.push(arguments);if
 			breadcrumbEl.unbind('click').hide();
 			breadcrumbSeparator.hide();
 			albumContainer.show();
-            albumPrevPage.show();
-            albumNextPage.show();
             prevPage.hide();
             nextPage.hide();
 
